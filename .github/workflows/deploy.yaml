@@ -18,18 +18,20 @@ jobs:
 
     - name: Install Dependencies
       run: |
-        pip install dvc[s3] s3fs
+        pip install dvc[s3]
         pip install -r requirements.txt
 
     - name: Pull Data and Model from S3
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_DEFAULT_REGION: eu-west-2
+        AWS_REGION: eu-west-2
       run: |
-        # Force DVC to use these credentials directly for the remote
+        # Configure DVC to use the region and credential explicitly one last time
+        dvc remote modify s3-storage region eu-west-2
         dvc remote modify s3-storage access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
         dvc remote modify s3-storage secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        dvc remote modify s3-storage region eu-west-2
         dvc pull -v
 
     - name: Build Docker Image
@@ -39,7 +41,7 @@ jobs:
     - name: Test Docker Container
       run: |
         docker run -d -p 5000:5000 --name test-container wine-prediction-app
-        sleep 10
+        sleep 15
         curl -X POST http://127.0.0.1:5000/predict \
              -H "Content-Type: application/json" \
              -d '[{"fixed_acidity": 7.4, "volatile_acidity": 0.7, "citric_acid": 0.0, "residual_sugar": 1.9}]'
