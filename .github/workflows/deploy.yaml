@@ -18,7 +18,7 @@ jobs:
 
     - name: Install Dependencies
       run: |
-        pip install dvc[s3]
+        pip install dvc[s3] s3fs
         pip install -r requirements.txt
 
     - name: Pull Data and Model from S3
@@ -26,7 +26,9 @@ jobs:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       run: |
-        # Explicitly configure the region and endpoint for London (eu-west-2)
+        # Force DVC to use these credentials directly for the remote
+        dvc remote modify s3-storage access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
+        dvc remote modify s3-storage secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         dvc remote modify s3-storage region eu-west-2
         dvc pull -v
 
